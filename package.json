@@ -1,13 +1,22 @@
 {
   "name": "history-view",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Standalone operation history view module",
+  "type": "module",
+  "main": "./dist/history-view.js",
+  "module": "./dist/history-view.js",
+  "exports": {
+    ".": "./dist/history-view.js",
+    "./src": "./src/index.ts"
+  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "vite --host 0.0.0.0",
+    "demo": "npm run dev",
+    "test": "vite build --config vite.config.js --mode test",
+    "build": "vite build --config vite.config.js",
+    "preview": "vite preview"
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
-  "type": "commonjs"
+  "license": "ISC"
 }
