@@ -50,10 +50,26 @@ export class HistoryView implements View {
     private _sheet: CSSStyleSheet | null = null;
 
     lifecycle: ViewLifecycle = {
-        onMount: () => {this.loadHistory(); this._sheet ??= loadAsAdopted(style) as CSSStyleSheet; },
-        onUnmount: () => { removeAdopted(this._sheet!); },
-        onShow: () => { this._sheet ??= loadAsAdopted(style) as CSSStyleSheet; this.loadHistory(); },
-        //onHide: () => { removeAdopted(this._sheet!); },
+        onUnmount: () => {
+            try {
+                if (this._sheet) removeAdopted(this._sheet);
+            } catch {
+                /* ignore */
+            }
+            this._sheet = null;
+        },
+        onShow: () => {
+            this._sheet ??= loadAsAdopted(style) as CSSStyleSheet;
+            this.loadHistory();
+        },
+        onHide: () => {
+            try {
+                if (this._sheet) removeAdopted(this._sheet);
+            } catch {
+                /* ignore */
+            }
+            this._sheet = null;
+        },
     };
 
     constructor(options: BaseViewOptions = {}) {
@@ -67,7 +83,6 @@ export class HistoryView implements View {
             this.shellContext = options.shellContext || this.shellContext;
         }
 
-        this._sheet = loadAsAdopted(style) as CSSStyleSheet;
         this.loadHistory();
 
         this.element = H`
