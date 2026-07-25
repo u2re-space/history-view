@@ -1,5 +1,17 @@
+/*
+ * Filename: history.scss
+ * FullPath: apps/CWSP-reborn/src/frontend/submodules/views/history/scss/history.scss
+ * Change date and time: 22.30.00_25.07.2026
+ * Reason for changes: Light/dark theme parity — lock color-scheme to app theme;
+ *   history item cards use their own slightly darker surfaces so they read
+ *   against the page background (light + dark).
+ *   2026-07-25e: clipboard-image media row — thumb + placeholder + kind chip.
+ */
+
 /**
  * History View Styles
+ * INVARIANT: Works with Veela tokens when present; otherwise light-dark()
+ * fallbacks keyed off html[data-theme] / inherited color-scheme.
  */
 
 @layer view.history {
@@ -9,13 +21,45 @@
         --view-content-max-width: 1000px;
     }
 
+    /* Lock scheme to app theme so OS light/dark cannot invert fallbacks mid-paint. */
+    :is(html[data-theme="light"] .view-history, :host-context(html[data-theme="light"]) .view-history) {
+        color-scheme: light;
+    }
+
+    :is(html[data-theme="dark"] .view-history, :host-context(html[data-theme="dark"]) .view-history) {
+        color-scheme: dark;
+    }
+
     .view-history {
+        color-scheme: inherit;
+
+        /* Page chrome */
+        --vh-bg: var(--color-surface, light-dark(#eef1f6, #0f1318));
+        --vh-fg: var(--color-on-surface, light-dark(#12151a, #e8edf2));
+        --vh-muted: var(--color-on-surface-variant, light-dark(#5c6570, #a8b0bc));
+        --vh-primary: var(--color-primary, #007acc);
+        --vh-danger: var(--color-error, #d32f2f);
+        --vh-on-primary: var(--color-on-primary, #ffffff);
+
+        /*
+         * WHY: cards need their own surface — slightly darker than the page in
+         * both themes so rows separate from the shell without looking “floating”.
+         * Light: soft slate wash; dark: deeper charcoal panel.
+         */
+        --vh-item-bg: var(
+            --color-surface-container-low,
+            light-dark(#e0e5ee, #0a0d12)
+        );
+        --vh-item-border: color-mix(in oklab, var(--vh-fg) 10%, transparent);
+        --vh-item-preview-bg: color-mix(in oklab, var(--vh-fg) 6%, var(--vh-item-bg));
+        --vh-elev: 0 1px 0 color-mix(in oklab, var(--vh-fg) 4%, transparent);
+
         display: flex;
         flex-direction: column;
         block-size: 100%;
         padding: 1.5rem;
-        background-color: var(--view-bg, var(--color-surface, #ffffff));
-        color: var(--view-fg, var(--color-on-surface, #1a1a1a));
+        background-color: var(--vh-bg);
+        color: var(--vh-fg);
     }
 
     .view-history__header {
@@ -28,6 +72,7 @@
             margin: 0;
             font-size: 1.5rem;
             font-weight: 700;
+            color: var(--vh-fg);
         }
     }
 
@@ -35,17 +80,18 @@
         display: flex;
         align-items: center;
         gap: 0.5rem;
-        padding: 0.5rem 0.75rem;
-        border: none;
+        padding: 0.5rem 0.85rem;
+        border: 1px solid color-mix(in oklab, var(--vh-danger) 45%, transparent);
         border-radius: 6px;
-        background: transparent;
-        color: #d32f2f;
+        background-color: color-mix(in oklab, var(--vh-danger) 12%, var(--vh-bg));
+        color: light-dark(#b71c1c, #ff8a80);
         font-size: 0.8125rem;
-        font-weight: 500;
+        font-weight: 600;
         cursor: pointer;
 
         &:hover {
-            background-color: rgba(211, 47, 47, 0.1);
+            background-color: color-mix(in oklab, var(--vh-danger) 22%, var(--vh-bg));
+            border-color: var(--vh-danger);
         }
     }
 
@@ -61,8 +107,7 @@
         justify-content: center;
         gap: 1rem;
         block-size: 100%;
-        color: var(--view-fg);
-        opacity: 0.4;
+        color: var(--vh-muted);
 
         p {
             margin: 0;
@@ -70,16 +115,152 @@
         }
     }
 
+    .view-history__hint {
+        margin: 0 0 1rem;
+        font-size: 0.8125rem;
+        color: var(--vh-muted);
+    }
+
     .view-history__item {
         padding: 1rem;
         margin-block-end: 0.75rem;
-        border-radius: 8px;
-        background-color: var(--view-item-bg, rgba(0, 0, 0, 0.02));
-        border-inline-start: 3px solid var(--color-primary, #007acc);
+        border-radius: 10px;
+        background-color: var(--vh-item-bg);
+        border: 1px solid var(--vh-item-border);
+        border-inline-start: 3px solid var(--vh-primary);
+        box-shadow: var(--vh-elev);
+        color: var(--vh-fg);
+        transition: opacity 0.2s ease, border-color 0.15s ease;
 
-        &.error {
-            border-inline-start-color: #d32f2f;
+        &.error,
+        &[data-status="error"] {
+            border-inline-start-color: var(--vh-danger);
         }
+
+        &.is-muted,
+        &[data-status="expired"],
+        &[data-status="declined"] {
+            opacity: 0.55;
+            border-inline-start-color: color-mix(in oklab, var(--vh-muted) 70%, transparent);
+        }
+    }
+
+    .view-history__item-sub {
+        margin: 0.25rem 0 0;
+        font-size: 0.75rem;
+        color: var(--vh-muted);
+    }
+
+    .view-history__kind-chip {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.12rem 0.45rem;
+        border-radius: 999px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+        background: color-mix(in oklab, var(--vh-primary) 16%, var(--vh-item-bg));
+        color: light-dark(#0b5f8a, #9fd3f5);
+        border: 1px solid color-mix(in oklab, var(--vh-primary) 28%, transparent);
+
+        &[data-kind="clipboard-image"] {
+            background: color-mix(in oklab, #7b1fa2 14%, var(--vh-item-bg));
+            border-color: color-mix(in oklab, #7b1fa2 35%, transparent);
+            color: light-dark(#6a1b9a, #e1bee7);
+        }
+
+        &[data-kind="files"] {
+            background: color-mix(in oklab, #2e7d32 14%, var(--vh-item-bg));
+            border-color: color-mix(in oklab, #2e7d32 35%, transparent);
+            color: light-dark(#1b5e20, #a5d6a7);
+        }
+    }
+
+    /* Clipboard image cards — thumb left, meta right. */
+    .view-history__item.is-image {
+        border-inline-start-color: #9c27b0;
+    }
+
+    .view-history__media {
+        display: grid;
+        grid-template-columns: 5.5rem minmax(0, 1fr);
+        gap: 0.85rem;
+        align-items: center;
+        margin-block-start: 0.15rem;
+    }
+
+    .view-history__thumb {
+        display: block;
+        inline-size: 5.5rem;
+        block-size: 5.5rem;
+        object-fit: cover;
+        border-radius: 10px;
+        background: color-mix(in oklab, var(--vh-fg) 6%, var(--vh-item-bg));
+        border: 1px solid color-mix(in oklab, var(--vh-fg) 12%, transparent);
+        box-shadow: inset 0 0 0 1px color-mix(in oklab, #fff 6%, transparent);
+    }
+
+    .view-history__thumb--placeholder {
+        display: grid;
+        place-items: center;
+        color: var(--vh-muted);
+        background:
+            linear-gradient(
+                135deg,
+                color-mix(in oklab, var(--vh-fg) 5%, var(--vh-item-bg)),
+                color-mix(in oklab, var(--vh-fg) 10%, var(--vh-item-bg))
+            );
+    }
+
+    .view-history__media-meta {
+        min-inline-size: 0;
+
+        .view-history__item-desc {
+            margin: 0;
+        }
+    }
+
+    @media (max-width: 420px) {
+        .view-history__media {
+            grid-template-columns: 4.5rem minmax(0, 1fr);
+            gap: 0.65rem;
+        }
+
+        .view-history__thumb {
+            inline-size: 4.5rem;
+            block-size: 4.5rem;
+        }
+    }
+
+    .view-history__item-preview {
+        margin: 0.5rem 0 0;
+        padding: 0.5rem;
+        max-block-size: 6rem;
+        overflow: auto;
+        font: 0.75rem/1.35 ui-monospace, monospace;
+        white-space: pre-wrap;
+        border-radius: 6px;
+        background: var(--vh-item-preview-bg);
+        color: var(--vh-fg);
+        border: 1px solid color-mix(in oklab, var(--vh-fg) 8%, transparent);
+    }
+
+    .view-history__progress {
+        margin-block-start: 0.65rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+
+        progress {
+            inline-size: 100%;
+            block-size: 0.45rem;
+        }
+    }
+
+    .view-history__progress-meta {
+        font-size: 0.7rem;
+        color: var(--vh-muted);
     }
 
     .view-history__item-header {
@@ -92,48 +273,114 @@
     .view-history__item-action {
         font-weight: 600;
         font-size: 0.875rem;
+        color: var(--vh-fg);
     }
 
     .view-history__item-time {
         font-size: 0.75rem;
-        color: var(--view-fg);
-        opacity: 0.6;
+        color: var(--vh-muted);
     }
 
     .view-history__item-desc {
         margin: 0;
         font-size: 0.875rem;
-        color: var(--view-fg);
-        opacity: 0.8;
+        color: var(--vh-fg);
+        opacity: 0.92;
     }
 
     .view-history__item-error {
         margin: 0.5rem 0 0 0;
         font-size: 0.8125rem;
-        color: #d32f2f;
+        color: light-dark(#b71c1c, #ff8a80);
     }
 
     .view-history__item-actions {
         display: flex;
+        flex-wrap: wrap;
         gap: 0.5rem;
         margin-block-start: 0.75rem;
     }
 
+    /*
+     * WHY: bare transparent/ghost chips were hard to see on item surfaces.
+     * Give every action a filled chip; primary (Accept) and danger (Remove/
+     * Decline) are color-coded so they read at a glance on both themes.
+     */
     .view-history__action-btn {
-        display: flex;
+        display: inline-flex;
         align-items: center;
+        justify-content: center;
         gap: 0.375rem;
-        padding: 0.375rem 0.625rem;
-        border: none;
-        border-radius: 4px;
-        background-color: rgba(0, 0, 0, 0.05);
-        color: var(--view-fg);
-        font-size: 0.75rem;
+        min-block-size: 2rem;
+        padding: 0.4rem 0.85rem;
+        border: 1px solid color-mix(in oklab, var(--vh-primary) 40%, transparent);
+        border-radius: 6px;
+        background-color: color-mix(in oklab, var(--vh-primary) 14%, var(--vh-item-bg));
+        color: light-dark(#0b5f8a, #7ec8f0);
+        font-size: 0.8125rem;
+        font-weight: 600;
+        letter-spacing: 0.01em;
         cursor: pointer;
+        box-shadow: 0 1px 0 color-mix(in oklab, var(--vh-fg) 4%, transparent);
 
         &:hover {
-            background-color: rgba(0, 0, 0, 0.1);
+            background-color: color-mix(in oklab, var(--vh-primary) 24%, var(--vh-item-bg));
+            border-color: color-mix(in oklab, var(--vh-primary) 60%, transparent);
         }
+
+        &:active {
+            transform: translateY(1px);
+        }
+
+        &:disabled {
+            opacity: 0.55;
+            cursor: default;
+            transform: none;
+        }
+
+        &[data-action="accept"],
+        &[data-action="reveal"],
+        &[data-action="download"],
+        &[data-action="open"] {
+            background-color: var(--vh-primary);
+            border-color: var(--vh-primary);
+            color: var(--vh-on-primary);
+
+            &:hover {
+                filter: brightness(1.08);
+                background-color: var(--vh-primary);
+            }
+        }
+
+        &[data-action="remove"],
+        &[data-action="decline"],
+        &[data-action="cancel"] {
+            background-color: color-mix(in oklab, var(--vh-danger) 14%, var(--vh-item-bg));
+            border-color: color-mix(in oklab, var(--vh-danger) 45%, transparent);
+            color: light-dark(#b71c1c, #ff8a80);
+
+            &:hover {
+                background-color: color-mix(in oklab, var(--vh-danger) 24%, var(--vh-item-bg));
+                border-color: var(--vh-danger);
+            }
+        }
+
+        &[data-action="dismiss"] {
+            background-color: color-mix(in oklab, var(--vh-fg) 8%, var(--vh-item-bg));
+            border-color: color-mix(in oklab, var(--vh-fg) 18%, transparent);
+            color: var(--vh-fg);
+
+            &:hover {
+                background-color: color-mix(in oklab, var(--vh-fg) 14%, var(--vh-item-bg));
+            }
+        }
+    }
+
+    /* Keep action chips readable on muted/expired rows. */
+    .view-history__item.is-muted .view-history__action-btn,
+    .view-history__item[data-status="expired"] .view-history__action-btn,
+    .view-history__item[data-status="declined"] .view-history__action-btn {
+        opacity: 1;
     }
 
 }
