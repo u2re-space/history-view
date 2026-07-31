@@ -1,13 +1,16 @@
 /*
  * Filename: index.ts
  * FullPath: apps/CWSP-reborn/src/frontend/submodules/views/history/index.ts
- * Change date and time: 22.45.00_25.07.2026
+ * Change date and time: 09.45.00_31.07.2026
  * Reason for changes: Transfer History UI — clipboard/files durable log with
  *   type actions, muted expired rows, live progress bar + speed (plan 1C/2A).
  *   2026-07-25e: clipboard-image cards — thumb preview + size subtitle layout.
  *   2026-07-25f: Neu file-backed thumbs via control preview URL; Open File labels.
  *   2026-07-25m: append action buttons via DOM — H`${array}` / Mapped only
  *   keeps the first node, so History showed one button per row.
+ *   2026-07-31: skip/coalesce list rebuilds when hidden — Neu poll was freezing UI.
+ *   2026-07-31b: pause Neu poll off-screen; progress-only DOM patch; scoped styles.
+ *   2026-07-31d: no ui-icon (font-registry); never paint huge data-URL thumbs.
  */
 
 import { H } from "fest/lure";
@@ -28,6 +31,7 @@ import {
     dispatchHistoryAction,
     getTransferHistoryStore,
     historyImageSrc,
+    setTransferHistoryUiActive,
     startCapacitorTransferHistory,
     startNeutralinoTransferHistory
 } from "./transfer-history-runtime";
@@ -48,18 +52,35 @@ export class HistoryView implements View {
     private entries: TransferHistoryEntry[] = [];
     private unsub: (() => void) | null = null;
     private _sheet: CSSStyleSheet | null = null;
+    /** WHY: cached History stays subscribed after navigate-away; gate DOM work. */
+    private visible = false;
+    private listRaf = 0;
+    private lastListSig = "";
+    private lastStructSig = "";
 
     lifecycle: ViewLifecycle = {
         onUnmount: () => {
             this.teardown();
         },
         onShow: () => {
+            this.visible = true;
             this._sheet ??= loadAsAdopted(style) as CSSStyleSheet;
             this.ensureRuntime();
             this.bindStore();
             this.refreshFromStore();
+            this.scheduleUpdateList(true);
+            // WHY: start Neu poll after first paint so navigate isn't blocked by JSON/DOM.
+            requestAnimationFrame(() => {
+                if (this.visible) setTransferHistoryUiActive(true);
+            });
         },
         onHide: () => {
+            this.visible = false;
+            setTransferHistoryUiActive(false);
+            if (this.listRaf) {
+                cancelAnimationFrame(this.listRaf);
+                this.listRaf = 0;
+            }
             this.teardownSheet();
         }
     };
@@ -77,13 +98,15 @@ export class HistoryView implements View {
         this.ensureRuntime();
         this.bindStore();
         this.refreshFromStore();
+        // First paint mounts the shell; Neu poll arms after paint (see onShow / rAF).
+        this.visible = true;
 
         this.element = H`
             <div class="view-history" data-view="history">
                 <div class="view-history__header">
                     <h1>History</h1>
                     <button class="view-history__clear-btn" data-action="clear" type="button">
-                        <ui-icon icon="trash" icon-style="duotone"></ui-icon>
+                        <span aria-hidden="true">⌫</span>
                         <span>Clear</span>
                     </button>
                 </div>
@@ -95,7 +118,10 @@ export class HistoryView implements View {
         ` as HTMLElement;
 
         this.setupEventHandlers();
-        this.updateList();
+        this.updateList(true);
+        requestAnimationFrame(() => {
+            if (this.visible) setTransferHistoryUiActive(true);
+        });
         return this.element;
     }
 
@@ -118,7 +144,8 @@ export class HistoryView implements View {
         if (this.unsub) return;
         this.unsub = getTransferHistoryStore().subscribe((list) => {
             this.entries = list;
-            this.updateList();
+            // WHY: Neu poll every 1.5s — never rebuild DOM while another view is active.
+            this.scheduleUpdateList(false);
         });
     }
 
@@ -127,6 +154,12 @@ export class HistoryView implements View {
     }
 
     private teardown(): void {
+        this.visible = false;
+        setTransferHistoryUiActive(false);
+        if (this.listRaf) {
+            cancelAnimationFrame(this.listRaf);
+            this.listRaf = 0;
+        }
         try {
             this.unsub?.();
         } catch {
@@ -135,6 +168,8 @@ export class HistoryView implements View {
         this.unsub = null;
         this.teardownSheet();
         this.element = null;
+        this.lastListSig = "";
+        this.lastStructSig = "";
     }
 
     private teardownSheet(): void {
@@ -152,7 +187,7 @@ export class HistoryView implements View {
             fragment.appendChild(
                 H`
                 <div class="view-history__empty">
-                    <ui-icon icon="clock-counter-clockwise" icon-style="duotone" size="48"></ui-icon>
+                    <span aria-hidden="true" style="font-size:2.5rem;opacity:.45">⏱</span>
                     <p>No transfers yet</p>
                 </div>
             ` as HTMLElement
@@ -221,9 +256,7 @@ export class HistoryView implements View {
                         hasThumb
                             ? H`<img class="view-history__thumb" src="${thumbSrc}" alt="" loading="lazy" decoding="async" />`
                             : H`
-                        <div class="view-history__thumb view-history__thumb--placeholder" aria-hidden="true">
-                            <ui-icon icon="image" icon-style="duotone" size="28"></ui-icon>
-                        </div>
+                        <div class="view-history__thumb view-history__thumb--placeholder" aria-hidden="true">🖼</div>
                     `
                     }
                     <div class="view-history__media-meta">
@@ -310,9 +343,86 @@ export class HistoryView implements View {
         }
     }
 
-    private updateList(): void {
+    /** Full row signature including progress (skip when identical). */
+    private listSignature(entries: TransferHistoryEntry[]): string {
+        let sig = String(entries.length);
+        for (const e of entries) {
+            sig += `|${e.id}:${e.status}:${e.bytesDone ?? ""}:${e.speedBps ?? ""}:${e.lastActionAt ?? e.ts}`;
+        }
+        return sig;
+    }
+
+    /** Structure without progress — progress-only updates patch bars in place. */
+    private structureSignature(entries: TransferHistoryEntry[]): string {
+        let sig = String(entries.length);
+        for (const e of entries) {
+            const thumb = e.thumbDataUrl ? e.thumbDataUrl.length : e.localFilePath ? 1 : 0;
+            sig += `|${e.id}:${e.status}:${e.kind}:${e.title}:${e.error ?? ""}:${thumb}`;
+        }
+        return sig;
+    }
+
+    private scheduleUpdateList(force: boolean): void {
+        if (!this.visible || !this.element) return;
+        if (force) {
+            if (this.listRaf) {
+                cancelAnimationFrame(this.listRaf);
+                this.listRaf = 0;
+            }
+            this.updateList(true);
+            return;
+        }
+        if (this.listRaf) return;
+        this.listRaf = requestAnimationFrame(() => {
+            this.listRaf = 0;
+            this.updateList(false);
+        });
+    }
+
+    /** WHY: live file transfers change bytes every poll — avoid full list remount. */
+    private patchProgressOnly(): void {
+        if (!this.element) return;
+        for (const entry of this.entries) {
+            // WHY: avoid CSS.escape dependency quirks; ids are store-owned tokens.
+            const safeId = String(entry.id).replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+            const row = this.element.querySelector(
+                `[data-entry="${safeId}"]`
+            ) as HTMLElement | null;
+            if (!row) continue;
+            const ratio = transferProgressRatio(entry);
+            const pct = Math.round(ratio * 100);
+            const speed = formatTransferSpeed(entry.speedBps);
+            const progress = row.querySelector("progress");
+            const meta = row.querySelector(".view-history__progress-meta");
+            if (progress) {
+                progress.max = 100;
+                progress.value = pct;
+            }
+            if (meta) {
+                const eta =
+                    entry.etaMs != null && entry.etaMs > 0
+                        ? ` · ~${Math.ceil(entry.etaMs / 1000)}s`
+                        : "";
+                meta.textContent = `${pct}% · ${speed}${eta}`;
+            }
+            row.dataset.status = entry.status;
+        }
+    }
+
+    private updateList(force = false): void {
+        if (!this.visible) return;
         const list = this.element?.querySelector("[data-history-list]");
         if (!list) return;
+        const fullSig = this.listSignature(this.entries);
+        if (!force && fullSig === this.lastListSig) return;
+        const structSig = this.structureSignature(this.entries);
+        if (!force && structSig === this.lastStructSig && list.childElementCount > 0) {
+            this.patchProgressOnly();
+            this.lastListSig = fullSig;
+            return;
+        }
+        this.lastListSig = fullSig;
+        this.lastStructSig = structSig;
         list.replaceChildren();
         list.appendChild(this.renderEntries());
     }
@@ -332,7 +442,7 @@ export class HistoryView implements View {
 
     reloadHistory(): void {
         this.refreshFromStore();
-        this.updateList();
+        this.scheduleUpdateList(true);
     }
 
     invokeChannelApi(action: string, _payload?: unknown): unknown {

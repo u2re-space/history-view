@@ -1,27 +1,16 @@
 /*
  * Filename: history.scss
- * FullPath: apps/CWSP-reborn/src/frontend/submodules/views/history/scss/history.scss
- * Change date and time: 22.30.00_25.07.2026
- * Reason for changes: Light/dark theme parity — lock color-scheme to app theme;
- *   history item cards use their own slightly darker surfaces so they read
- *   against the page background (light + dark).
- *   2026-07-25e: clipboard-image media row — thumb + placeholder + kind chip.
- */
-
-/**
- * History View Styles
- * INVARIANT: Works with Veela tokens when present; otherwise light-dark()
- * fallbacks keyed off html[data-theme] / inherited color-scheme.
+ * FullPath: modules/views/history-view/src/scss/history.scss
+ * Change date and time: 09.55.00_31.07.2026
+ * Reason for changes: Isolate History under `.view-history` only — no html/body.
+ *   WHY: `@scope` + `contain` broke Neutralino WebView hit-testing (whole UI
+ *   unclickable after opening History). Prefer classic BEM scoping.
+ *
+ * INVARIANT: never style document `html` / `body` / `:root` from this sheet.
  */
 
 @layer view.history {
-
-    :is(html, body):has([data-view="history"]) {
-        --view-layout: "flex";
-        --view-content-max-width: 1000px;
-    }
-
-    /* Lock scheme to app theme so OS light/dark cannot invert fallbacks mid-paint. */
+    /* Theme pins — view root only. */
     :is(html[data-theme="light"] .view-history, :host-context(html[data-theme="light"]) .view-history) {
         color-scheme: light;
     }
@@ -33,19 +22,12 @@
     .view-history {
         color-scheme: inherit;
 
-        /* Page chrome */
         --vh-bg: var(--color-surface, light-dark(#eef1f6, #0f1318));
         --vh-fg: var(--color-on-surface, light-dark(#12151a, #e8edf2));
         --vh-muted: var(--color-on-surface-variant, light-dark(#5c6570, #a8b0bc));
         --vh-primary: var(--color-primary, #007acc);
         --vh-danger: var(--color-error, #d32f2f);
         --vh-on-primary: var(--color-on-primary, #ffffff);
-
-        /*
-         * WHY: cards need their own surface — slightly darker than the page in
-         * both themes so rows separate from the shell without looking “floating”.
-         * Light: soft slate wash; dark: deeper charcoal panel.
-         */
         --vh-item-bg: var(
             --color-surface-container-low,
             light-dark(#e0e5ee, #0a0d12)
@@ -57,9 +39,20 @@
         display: flex;
         flex-direction: column;
         block-size: 100%;
+        min-block-size: 0;
         padding: 1.5rem;
         background-color: var(--vh-bg);
         color: var(--vh-fg);
+        box-sizing: border-box;
+        pointer-events: auto;
+        position: relative;
+        z-index: 0;
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+        }
     }
 
     .view-history__header {
@@ -88,6 +81,7 @@
         font-size: 0.8125rem;
         font-weight: 600;
         cursor: pointer;
+        pointer-events: auto;
 
         &:hover {
             background-color: color-mix(in oklab, var(--vh-danger) 22%, var(--vh-bg));
@@ -97,7 +91,9 @@
 
     .view-history__list {
         flex: 1;
+        min-block-size: 0;
         overflow-y: auto;
+        pointer-events: auto;
     }
 
     .view-history__empty {
@@ -131,6 +127,7 @@
         box-shadow: var(--vh-elev);
         color: var(--vh-fg);
         transition: opacity 0.2s ease, border-color 0.15s ease;
+        pointer-events: auto;
 
         &.error,
         &[data-status="error"] {
@@ -177,7 +174,6 @@
         }
     }
 
-    /* Clipboard image cards — thumb left, meta right. */
     .view-history__item.is-image {
         border-inline-start-color: #9c27b0;
     }
@@ -198,19 +194,14 @@
         border-radius: 10px;
         background: color-mix(in oklab, var(--vh-fg) 6%, var(--vh-item-bg));
         border: 1px solid color-mix(in oklab, var(--vh-fg) 12%, transparent);
-        box-shadow: inset 0 0 0 1px color-mix(in oklab, #fff 6%, transparent);
     }
 
     .view-history__thumb--placeholder {
         display: grid;
         place-items: center;
         color: var(--vh-muted);
-        background:
-            linear-gradient(
-                135deg,
-                color-mix(in oklab, var(--vh-fg) 5%, var(--vh-item-bg)),
-                color-mix(in oklab, var(--vh-fg) 10%, var(--vh-item-bg))
-            );
+        font-size: 1.5rem;
+        background: color-mix(in oklab, var(--vh-fg) 8%, var(--vh-item-bg));
     }
 
     .view-history__media-meta {
@@ -301,11 +292,6 @@
         margin-block-start: 0.75rem;
     }
 
-    /*
-     * WHY: bare transparent/ghost chips were hard to see on item surfaces.
-     * Give every action a filled chip; primary (Accept) and danger (Remove/
-     * Decline) are color-coded so they read at a glance on both themes.
-     */
     .view-history__action-btn {
         display: inline-flex;
         align-items: center;
@@ -319,23 +305,17 @@
         color: light-dark(#0b5f8a, #7ec8f0);
         font-size: 0.8125rem;
         font-weight: 600;
-        letter-spacing: 0.01em;
         cursor: pointer;
-        box-shadow: 0 1px 0 color-mix(in oklab, var(--vh-fg) 4%, transparent);
+        pointer-events: auto;
 
         &:hover {
             background-color: color-mix(in oklab, var(--vh-primary) 24%, var(--vh-item-bg));
             border-color: color-mix(in oklab, var(--vh-primary) 60%, transparent);
         }
 
-        &:active {
-            transform: translateY(1px);
-        }
-
         &:disabled {
             opacity: 0.55;
             cursor: default;
-            transform: none;
         }
 
         &[data-action="accept"],
@@ -345,11 +325,6 @@
             background-color: var(--vh-primary);
             border-color: var(--vh-primary);
             color: var(--vh-on-primary);
-
-            &:hover {
-                filter: brightness(1.08);
-                background-color: var(--vh-primary);
-            }
         }
 
         &[data-action="remove"],
@@ -358,29 +333,18 @@
             background-color: color-mix(in oklab, var(--vh-danger) 14%, var(--vh-item-bg));
             border-color: color-mix(in oklab, var(--vh-danger) 45%, transparent);
             color: light-dark(#b71c1c, #ff8a80);
-
-            &:hover {
-                background-color: color-mix(in oklab, var(--vh-danger) 24%, var(--vh-item-bg));
-                border-color: var(--vh-danger);
-            }
         }
 
         &[data-action="dismiss"] {
             background-color: color-mix(in oklab, var(--vh-fg) 8%, var(--vh-item-bg));
             border-color: color-mix(in oklab, var(--vh-fg) 18%, transparent);
             color: var(--vh-fg);
-
-            &:hover {
-                background-color: color-mix(in oklab, var(--vh-fg) 14%, var(--vh-item-bg));
-            }
         }
     }
 
-    /* Keep action chips readable on muted/expired rows. */
     .view-history__item.is-muted .view-history__action-btn,
     .view-history__item[data-status="expired"] .view-history__action-btn,
     .view-history__item[data-status="declined"] .view-history__action-btn {
         opacity: 1;
     }
-
 }
