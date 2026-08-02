@@ -43,6 +43,7 @@
         padding: 1.5rem;
         background-color: var(--vh-bg);
         color: var(--vh-fg);
+        color: contrast-color(var(--vh-bg));
         box-sizing: border-box;
         pointer-events: auto;
         position: relative;
@@ -77,6 +78,7 @@
         border: 1px solid color-mix(in oklab, var(--vh-danger) 45%, transparent);
         border-radius: 6px;
         background-color: color-mix(in oklab, var(--vh-danger) 12%, var(--vh-bg));
+        color: contrast-color(color-mix(in oklab, var(--vh-danger) 12%, var(--vh-bg)));
         color: light-dark(#b71c1c, #ff8a80);
         font-size: 0.8125rem;
         font-weight: 600;
@@ -86,6 +88,7 @@
         &:hover {
             background-color: color-mix(in oklab, var(--vh-danger) 22%, var(--vh-bg));
             border-color: var(--vh-danger);
+            color: contrast-color(color-mix(in oklab, var(--vh-danger) 22%, var(--vh-bg)));
         }
     }
 
@@ -126,6 +129,7 @@
         border-inline-start: 3px solid var(--vh-primary);
         box-shadow: var(--vh-elev);
         color: var(--vh-fg);
+        color: contrast-color(var(--vh-item-bg));
         transition: opacity 0.2s ease, border-color 0.15s ease;
         pointer-events: auto;
 
@@ -302,6 +306,7 @@
         border: 1px solid color-mix(in oklab, var(--vh-primary) 40%, transparent);
         border-radius: 6px;
         background-color: color-mix(in oklab, var(--vh-primary) 14%, var(--vh-item-bg));
+        color: contrast-color(color-mix(in oklab, var(--vh-primary) 14%, var(--vh-item-bg)));
         color: light-dark(#0b5f8a, #7ec8f0);
         font-size: 0.8125rem;
         font-weight: 600;
@@ -311,6 +316,7 @@
         &:hover {
             background-color: color-mix(in oklab, var(--vh-primary) 24%, var(--vh-item-bg));
             border-color: color-mix(in oklab, var(--vh-primary) 60%, transparent);
+            color: contrast-color(color-mix(in oklab, var(--vh-primary) 24%, var(--vh-item-bg)));
         }
 
         &:disabled {
@@ -325,6 +331,7 @@
             background-color: var(--vh-primary);
             border-color: var(--vh-primary);
             color: var(--vh-on-primary);
+            color: contrast-color(var(--vh-primary));
         }
 
         &[data-action="remove"],
@@ -333,12 +340,14 @@
             background-color: color-mix(in oklab, var(--vh-danger) 14%, var(--vh-item-bg));
             border-color: color-mix(in oklab, var(--vh-danger) 45%, transparent);
             color: light-dark(#b71c1c, #ff8a80);
+            color: contrast-color(color-mix(in oklab, var(--vh-danger) 14%, var(--vh-item-bg)));
         }
 
         &[data-action="dismiss"] {
             background-color: color-mix(in oklab, var(--vh-fg) 8%, var(--vh-item-bg));
             border-color: color-mix(in oklab, var(--vh-fg) 18%, transparent);
             color: var(--vh-fg);
+            color: contrast-color(color-mix(in oklab, var(--vh-fg) 8%, var(--vh-item-bg)));
         }
     }
 
