@@ -30,37 +30,37 @@
             "com/config/Settings": [
                 "../../shared/runtime/settings-config.ts"
             ],
-            "fest/*": [
+            "@fest-lib/*": [
                 "../../shared/fest/*"
             ],
-            "fest/dom": [
+            "@fest-lib/dom": [
                 "../../projects/dom.ts/src/index.ts"
             ],
-            "fest/lure": [
+            "@fest-lib/lure": [
                 "../../projects/lur.e/src/index.ts"
             ],
-            "fest/object": [
+            "@fest-lib/object": [
                 "../../projects/object.ts/src/index.ts"
             ],
-            "fest/core": [
+            "@fest-lib/core": [
                 "../../projects/core.ts/src/index.ts"
             ],
-            "fest/icon": [
+            "@fest-lib/icon": [
                 "../../projects/icon.ts/src/index.ts"
             ],
-            "fest/fl-ui": [
+            "@fest-lib/fl-ui": [
                 "../../projects/fl.ui/src/index.ts"
             ],
-            "fest/image": [
+            "@fest-lib/image": [
                 "../../projects/image.ts/src/index.ts"
             ],
-            "fest/ui": [
+            "@fest-lib/ui": [
                 "../../projects/fl.ui/src/index.ts"
             ],
-            "fest/uniform": [
+            "@fest-lib/uniform": [
                 "../../projects/uniform.ts/src/index.ts"
             ],
-            "fest/polyfill/*": [
+            "@fest-lib/polyfill/*": [
                 "../../projects/shared/fest/polyfill/*"
             ],
             "polyfill/*": [

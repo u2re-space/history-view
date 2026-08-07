@@ -13,8 +13,8 @@
  *   2026-07-31d: no ui-icon (font-registry); never paint huge data-URL thumbs.
  */
 
-import { H } from "fest/lure";
-import { loadAsAdopted, removeAdopted } from "fest/dom";
+import { H } from "@fest-lib/lure";
+import { loadAsAdopted, removeAdopted } from "@fest-lib/dom";
 import type { View, ViewOptions, ViewLifecycle, ShellContext } from "shells/types";
 import type { BaseViewOptions } from "views/types";
 import { HistoryChannelAction } from "views/apis/channel-actions";
