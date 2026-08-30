@@ -36,6 +36,9 @@
             "@fest-lib/dom": [
                 "../../projects/dom.ts/src/index.ts"
             ],
+            "@fest-lib/style-lib": [
+                "../../projects/style.ts/src/index.ts"
+            ],
             "@fest-lib/lure": [
                 "../../projects/lur.e/src/index.ts"
             ],

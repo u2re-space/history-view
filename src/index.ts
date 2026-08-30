@@ -14,7 +14,7 @@
  */
 
 import { H } from "@fest-lib/lure";
-import { loadAsAdopted, removeAdopted } from "@fest-lib/dom";
+import { loadAsAdopted, removeAdopted } from "@fest-lib/style-lib";
 import type { View, ViewOptions, ViewLifecycle, ShellContext } from "shells/types";
 import type { BaseViewOptions } from "views/types";
 import { HistoryChannelAction } from "views/apis/channel-actions";
