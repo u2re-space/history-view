@@ -13,7 +13,7 @@
  * shadow-DOM self-sufficiency.
  */
 
-@layer view.history {
+@layer components {
     /* Theme pins — view root only. */
     :is(html[data-theme="light"] .view-history, :host-context(html[data-theme="light"]) .view-history) {
         color-scheme: light;
