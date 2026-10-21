@@ -35,6 +35,7 @@
         --vh-item-border: color-mix(in oklab, var(--vh-fg, light-dark(#12151a, #e8edf2)) 10%, transparent);
         --vh-item-preview-bg: color-mix(in oklab, var(--vh-fg, light-dark(#12151a, #e8edf2)) 6%, var(--vh-item-bg, light-dark(#e0e5ee, #0a0d12)));
         --vh-elev: 0 1px 0 color-mix(in oklab, var(--vh-fg, light-dark(#12151a, #e8edf2)) 4%, transparent);
+        --vh-bg: var(--color-surface-container-low, light-dark(#eef1f6, #0f1318));
 
         display: flex;
         flex-direction: column;
